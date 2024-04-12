@@ -1,37 +1,54 @@
-import {useState} from 'react';
 import './App.css';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-
+import './components/Task';
+import Task from './components/Task';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
+import Chart from './components/Chart';
+import {useState, useEffect} from 'react';
 function App() {
-    const [count, setCount] = useState(0);
+    const [taskList, setTaskList] = useState<Task[]>([]);
+
+    useEffect(() => {
+        const initialTaskList: Task[] = [
+            {
+                id: 1,
+                name: 'Task 1',
+                description: 'Description for Task 1',
+                duration: 10,
+            },
+            {
+                id: 2,
+                name: 'Task 2',
+                description: 'Description for Task 2',
+                duration: 7,
+            },
+            {
+                id: 3,
+                name: 'Task 3',
+                description: 'Description for Task 3',
+                duration: 20,
+            },
+            {
+                id: 4,
+                name: 'Task 4',
+                description: 'Description for Task 4',
+                duration: 100,
+            },
+        ];
+        setTaskList(initialTaskList);
+    }, []);
     return (
-        <>
-            <div>
-                <a href='https://vitejs.dev' target='_blank'>
-                    <img src={viteLogo} className='logo' alt='Vite logo' />
-                </a>
-                <a href='https://react.dev' target='_blank'>
-                    <img
-                        src={reactLogo}
-                        className='logo react'
-                        alt='React logo'
+        <div className='App'>
+            <Router>
+                <Routes>
+                    <Route path='/' element={<Task />} />
+                    <Route
+                        path='/chart'
+                        element={<Chart taskList={taskList} />}
                     />
-                </a>
-            </div>
-            <h1>Vite + React</h1>
-            <div className='card'>
-                <button onClick={() => setCount((count) => count + 1)}>
-                    count is {count}
-                </button>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to test HMR
-                </p>
-            </div>
-            <p className='read-the-docs'>
-                Click on the Vite and React logos to learn more
-            </p>
-        </>
+                </Routes>
+            </Router>
+        </div>
     );
 }
 

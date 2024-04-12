@@ -10,8 +10,13 @@ module.exports = {
     ignorePatterns: ['dist', '.eslintrc.cjs'],
     parser: '@typescript-eslint/parser',
     plugins: ['react-refresh', 'prettier'],
+    parserOptions: {
+        ecmaVersion: 2020,
+    },
     rules: {
-        'no-unused-vars': 'off',
+        //'no-unused-vars': 'off',
+        'react/jsx-uses-react': 'off',
+        'react/react-in-jsx-scope': 'off',
         '@typescript-eslint/no-unused-vars': 'error',
     },
 
