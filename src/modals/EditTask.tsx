@@ -51,7 +51,7 @@ const EditTask: React.FC<Props> = ({modal, toggle, taskObj}) => {
         //updateTask(tempObj);
         try {
             const response = await fetch(
-                `https://localhost:7227/api/Tasks/UpdateTask/${taskObj.id}`,
+                `https://localhost:77149/api/Tasks/UpdateTask/${taskObj.id}`,
                 {
                     method: 'PUT',
                     headers: {
