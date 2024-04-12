@@ -27,7 +27,7 @@ const Task = () => {
         const fetchData = async () => {
             try {
                 const response = await fetch(
-                    'https://localhost:7227/api/Tasks/GetAllTasks',
+                    'https://localhost:7149/api/Task/GetAllTasks',
                 );
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -51,7 +51,7 @@ const Task = () => {
     const deleteTask = async (taskId: number) => {
         try {
             const response = await fetch(
-                `https://localhost:7227/api/Tasks/Delete/${taskId}`,
+                `https://localhost:7149/api/Task/Delete/${taskId}`,
                 {
                     method: 'DELETE',
                 },
@@ -85,7 +85,7 @@ const Task = () => {
         setErrorMessage(null);
         try {
             const response = await fetch(
-                'https://localhost:7149/api/Tasks/AddTask',
+                'https://localhost:7149/api/Task/AddTask',
                 {
                     method: 'POST',
                     headers: {
@@ -124,7 +124,7 @@ const Task = () => {
     const sortByName = async () => {
         try {
             const response = await fetch(
-                `https://localhost:7149/api/Tasks/GetAllDataSortedByName`,
+                `https://localhost:7149/api/Task/GetAllDataSortedByName`,
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch sorted data');
