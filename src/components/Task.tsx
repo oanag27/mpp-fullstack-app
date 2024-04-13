@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import AddTask from '../modals/AddTask';
 import Card from './Card';
-
+import isOnline from 'is-online';
 interface Task {
     id: number;
     name: string;
@@ -13,6 +13,7 @@ interface PartialTask {
     description: string;
     duration: number;
 }
+
 const Task = () => {
     const [modal, setModal] = useState(false);
     const [taskList, setTaskList] = useState<Task[]>([]);
@@ -22,10 +23,19 @@ const Task = () => {
     const [itemsPerPage] = useState(3); // Number of items to display per page
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [isOnlineStatus, setIsOnlineStatus] = useState(true); // Internet connection status
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const online = await isOnline();
+                setIsOnlineStatus(online); // Update online status
+
+                if (!online) {
+                    // If offline, don't make the fetch request
+                    setLoading(false);
+                    return;
+                }
                 const response = await fetch(
                     'https://localhost:7149/api/Task/GetAllTasks',
                 );
@@ -38,6 +48,7 @@ const Task = () => {
                 setLoading(false);
             } catch (error) {
                 console.error('Error:', error);
+                setErrorMessage('Server is unreachable'); // Set error message for server down
                 setLoading(false);
             }
         };
@@ -168,6 +179,11 @@ const Task = () => {
                 >
                     Sort by Name
                 </button>
+                {!isOnlineStatus ? (
+                    <p style={{color: 'red'}}>Offline</p>
+                ) : (
+                    <p></p>
+                )}
                 {errorMessage && (
                     <div className='error-message' style={{color: 'red'}}>
                         {errorMessage}
