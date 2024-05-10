@@ -1,1 +1,1 @@
-
+My project is a robust task management application built using React, Vite, and TypeScript. It offers seamless CRUD (Create, Read, Update, Delete) operations for tasks, with intuitive sorting capabilities by name. Additionally, it incorporates visual representations through charts for data analysis. Notably, it's designed to gracefully handle scenarios like internet and server downtime, ensuring uninterrupted user experience.
