@@ -14,11 +14,13 @@ interface PartialTask {
     name: string;
     description: string;
     duration: number;
+    offlineAdded?: boolean;
 }
 
 const Task = () => {
     const [modal, setModal] = useState(false);
     const [taskList, setTaskList] = useState<Task[]>([]);
+    //const [modifiedTasks, setModifiedTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -35,6 +37,7 @@ const Task = () => {
                 console.log('status:', online);
                 if (!online) {
                     const storedTasks = localStorage.getItem('taskList');
+                    console.log('Stored tasks:', storedTasks);
                     if (storedTasks) {
                         setTaskList(JSON.parse(storedTasks));
                     }
@@ -55,7 +58,7 @@ const Task = () => {
                 setTaskList(data);
                 setLoading(false);
                 // Sync tasks with the server
-                //await syncWithServer();
+                await syncWithServer();
             } catch (error) {
                 console.error('Error:', error);
                 setErrorMessage('Server is unreachable'); // Set error message for server down
@@ -66,6 +69,49 @@ const Task = () => {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        const handleOnlineStatusChange = () => {
+            setIsOnlineStatus(navigator.onLine);
+        };
+
+        window.addEventListener('online', handleOnlineStatusChange);
+        window.addEventListener('offline', handleOnlineStatusChange);
+
+        return () => {
+            window.removeEventListener('online', handleOnlineStatusChange);
+            window.removeEventListener('offline', handleOnlineStatusChange);
+        };
+    }, []);
+
+    const syncWithServer = async () => {
+        try {
+            const online = await isOnline();
+            if (online) {
+                const modifiedTasks = JSON.parse(
+                    localStorage.getItem('taskList') || '[]',
+                );
+                for (const task of modifiedTasks) {
+                    if (task.offlineAdded) {
+                        // Check if task was added offline
+                        await saveTask(task);
+                    }
+                }
+                //localStorage.removeItem('taskList');
+                // Remove offlineAdded flag from tasks that were synced
+                const tasksToSaveOffline = modifiedTasks.filter(
+                    (task: PartialTask) => !task.offlineAdded,
+                );
+                localStorage.setItem(
+                    'taskList',
+                    JSON.stringify(tasksToSaveOffline),
+                );
+            } else {
+                return;
+            }
+        } catch (error) {
+            console.error('Error syncing tasks with server:', error);
+        }
+    };
     const toggle = () => {
         setModal(!modal);
     };
@@ -109,17 +155,20 @@ const Task = () => {
         }
         setErrorMessage(null);
         if (!isOnlineStatus) {
-            // If offline, generate a unique ID for the task
             const tempId = Math.floor(Math.random() * 1000000);
-            const newTask = {id: tempId, ...taskObj, subtasks: []}; // Add the unique ID and empty subtasks array to the task object
-            // Create a copy of the current task list
-            const tempList = [...taskList];
-            // Push the new task with the unique ID into the copy
-            tempList.push(newTask);
+            const taskWithoutId = {
+                id: tempId,
+                name: taskObj.name,
+                description: taskObj.description,
+                duration: taskObj.duration,
+                offlineAdded: true,
+            };
+
             // Update the task list state
-            setTaskList(tempList);
+            const updatedTaskList = [...taskList, taskWithoutId];
+            setTaskList(updatedTaskList);
             // Update local storage
-            localStorage.setItem('taskList', JSON.stringify(tempList));
+            localStorage.setItem('taskList', JSON.stringify(updatedTaskList));
             // Close the modal
             setModal(false);
             // Exit the function
@@ -177,35 +226,13 @@ const Task = () => {
             console.error('Error sorting by name:', error);
         }
     };
-    // Get current tasks
-    // const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-    // const indexOfLastItem =
-    //     currentPage === 1
-    //         ? Math.min(currentPage * 4, taskList.length)
-    //         : currentPage * itemsPerPage;
-    // let currentTasks: Task[] = [];
-    // if (currentPage === 1) {
-    //     currentTasks = taskList.slice(0, 4); // Display first 4 tasks on the first page
-    // } else {
-    //     currentTasks = taskList.slice(4); // Display remaining tasks on subsequent pages
-    // }
+
     const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
     const indexOfLastItem = Math.min(
         currentPage * itemsPerPage,
         taskList.length,
     );
-    // Get current tasks
-    // const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-    // const indexOfLastItem =
-    //     currentPage === 1
-    //         ? Math.min(currentPage * 4, taskList.length)
-    //         : currentPage * itemsPerPage;
-    // let currentTasks: Task[] = [];
-    // if (currentPage === 1) {
-    //     currentTasks = taskList.slice(0, 4); // Display first 4 tasks on the first page
-    // } else {
-    //     currentTasks = taskList.slice(4); // Display remaining tasks on subsequent pages
-    // }
+
     const currentTasks = taskList.slice(indexOfFirstItem, indexOfLastItem);
 
     // Change page
