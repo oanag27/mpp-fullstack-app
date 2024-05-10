@@ -15,7 +15,7 @@ describe('Card component', () => {
         render(
             <Card
                 taskObj={mockTask}
-                index={0}
+                name={'Task 1'}
                 deleteTask={() => {}}
                 updateListArray={() => {}}
             />,
@@ -31,7 +31,7 @@ describe('Card component', () => {
         render(
             <Card
                 taskObj={mockTask}
-                index={0}
+                name={'Task 1'}
                 deleteTask={deleteTaskMock}
                 updateListArray={() => {}}
             />,

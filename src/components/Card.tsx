@@ -9,27 +9,28 @@ interface Task {
 
 interface Props {
     taskObj: Task;
-    index: number;
-    deleteTask: (index: number) => void;
-    updateListArray: (obj: Task, index: number) => void;
+    //index: number;
+    name: string;
+    deleteTask: (name: string) => void;
+    updateListArray: (obj: Task, name: string) => void;
 }
 
 const Card: React.FC<Props> = ({
     taskObj,
-    index,
+    name,
     deleteTask,
     updateListArray,
 }) => {
     const [modal, setModal] = useState(false);
     const updateTask = (obj: Task) => {
-        updateListArray(obj, index);
+        updateListArray(obj, name);
     };
     const toggle = () => {
         setModal(!modal);
     };
 
     const handleDelete = () => {
-        deleteTask(taskObj.id);
+        deleteTask(taskObj.name);
     };
     return (
         <div className='card-wrapper mr-5'>

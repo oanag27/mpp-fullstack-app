@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import AddTask from '../modals/AddTask';
 import Card from './Card';
 import isOnline from 'is-online';
+import {Link} from 'react-router-dom';
 interface Task {
     id: number;
     name: string;
@@ -9,6 +10,7 @@ interface Task {
     duration: number;
 }
 interface PartialTask {
+    id?: number;
     name: string;
     description: string;
     duration: number;
@@ -30,12 +32,18 @@ const Task = () => {
             try {
                 const online = await isOnline();
                 setIsOnlineStatus(online); // Update online status
-
+                console.log('status:', online);
                 if (!online) {
+                    const storedTasks = localStorage.getItem('taskList');
+                    if (storedTasks) {
+                        setTaskList(JSON.parse(storedTasks));
+                    }
                     // If offline, don't make the fetch request
                     setLoading(false);
+                    console.log('stored:', storedTasks);
                     return;
                 }
+                console.log('stored:');
                 const response = await fetch(
                     'https://localhost:7149/api/Task/GetAllTasks',
                 );
@@ -46,6 +54,8 @@ const Task = () => {
                 console.log('Fetched data:', data);
                 setTaskList(data);
                 setLoading(false);
+                // Sync tasks with the server
+                //await syncWithServer();
             } catch (error) {
                 console.error('Error:', error);
                 setErrorMessage('Server is unreachable'); // Set error message for server down
@@ -59,10 +69,10 @@ const Task = () => {
     const toggle = () => {
         setModal(!modal);
     };
-    const deleteTask = async (taskId: number) => {
+    const deleteTask = async (taskName: string) => {
         try {
             const response = await fetch(
-                `https://localhost:7149/api/Task/Delete/${taskId}`,
+                `https://localhost:7149/api/Task/DeleteName/${taskName}`,
                 {
                     method: 'DELETE',
                 },
@@ -72,28 +82,49 @@ const Task = () => {
             }
             // Remove the deleted task from the frontend task list
             const updatedTaskList = taskList.filter(
-                (task) => task.id !== taskId,
+                (task) => task.name !== taskName,
             );
             setTaskList(updatedTaskList);
         } catch (error) {
             console.error('Error deleting task:', error);
         }
     };
-
-    const updateListArray = (obj: Task, index: number) => {
-        const tempList = [...taskList]; // Create a new array
-        tempList[index] = obj;
-        localStorage.setItem('taskList', JSON.stringify(tempList));
-        setTaskList(tempList);
+    const updateListArray = (obj: Task, name: string) => {
+        const index = taskList.findIndex((task) => task.name === name); // Find the index of the task with the given name
+        if (index !== -1) {
+            // Check if the task with the given name exists
+            const tempList = [...taskList]; // Create a new array
+            tempList[index] = obj; // Update the task at the found index
+            localStorage.setItem('taskList', JSON.stringify(tempList));
+            setTaskList(tempList);
+        } else {
+            console.error(`Task with name ${name} not found.`);
+        }
     };
 
     const saveTask = async (taskObj: PartialTask) => {
         if (!taskObj.name || !taskObj.description || taskObj.duration <= 0) {
-            //console.error('Please provide valid task details.');
             setErrorMessage('Please provide valid task details.');
             return;
         }
         setErrorMessage(null);
+        if (!isOnlineStatus) {
+            // If offline, generate a unique ID for the task
+            const tempId = Math.floor(Math.random() * 1000000);
+            const newTask = {id: tempId, ...taskObj, subtasks: []}; // Add the unique ID and empty subtasks array to the task object
+            // Create a copy of the current task list
+            const tempList = [...taskList];
+            // Push the new task with the unique ID into the copy
+            tempList.push(newTask);
+            // Update the task list state
+            setTaskList(tempList);
+            // Update local storage
+            localStorage.setItem('taskList', JSON.stringify(tempList));
+            // Close the modal
+            setModal(false);
+            // Exit the function
+            return;
+        }
         try {
             const response = await fetch(
                 'https://localhost:7149/api/Task/AddTask',
@@ -147,17 +178,35 @@ const Task = () => {
         }
     };
     // Get current tasks
+    // const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+    // const indexOfLastItem =
+    //     currentPage === 1
+    //         ? Math.min(currentPage * 4, taskList.length)
+    //         : currentPage * itemsPerPage;
+    // let currentTasks: Task[] = [];
+    // if (currentPage === 1) {
+    //     currentTasks = taskList.slice(0, 4); // Display first 4 tasks on the first page
+    // } else {
+    //     currentTasks = taskList.slice(4); // Display remaining tasks on subsequent pages
+    // }
     const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-    const indexOfLastItem =
-        currentPage === 1
-            ? Math.min(currentPage * 4, taskList.length)
-            : currentPage * itemsPerPage;
-    let currentTasks: Task[] = [];
-    if (currentPage === 1) {
-        currentTasks = taskList.slice(0, 4); // Display first 4 tasks on the first page
-    } else {
-        currentTasks = taskList.slice(4); // Display remaining tasks on subsequent pages
-    }
+    const indexOfLastItem = Math.min(
+        currentPage * itemsPerPage,
+        taskList.length,
+    );
+    // Get current tasks
+    // const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+    // const indexOfLastItem =
+    //     currentPage === 1
+    //         ? Math.min(currentPage * 4, taskList.length)
+    //         : currentPage * itemsPerPage;
+    // let currentTasks: Task[] = [];
+    // if (currentPage === 1) {
+    //     currentTasks = taskList.slice(0, 4); // Display first 4 tasks on the first page
+    // } else {
+    //     currentTasks = taskList.slice(4); // Display remaining tasks on subsequent pages
+    // }
+    const currentTasks = taskList.slice(indexOfFirstItem, indexOfLastItem);
 
     // Change page
     const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
@@ -166,9 +215,21 @@ const Task = () => {
         <>
             <div className='header text-center'>
                 <h3 style={{color: '#fff'}}>Task Manager</h3>
+                <Link to='/subtask'>
+                    <button
+                        className='btn btn-secondary mt-3 ml-3'
+                        style={{marginRight: '15px'}}
+                    >
+                        Subtasks
+                    </button>
+                </Link>
                 <button
                     className='btn btn-primary mt-3'
-                    style={{backgroundColor: '#fff', color: '#3c3c3c'}}
+                    style={{
+                        backgroundColor: '#fff',
+                        color: '#3c3c3c',
+                        marginRight: '15px',
+                    }}
                     onClick={() => setModal(true)}
                 >
                     Add Task
@@ -194,11 +255,12 @@ const Task = () => {
                 <div>Loading...</div>
             ) : (
                 <div className='task-container'>
-                    {currentTasks.map((obj, index) => (
+                    {currentTasks.map((obj) => (
                         <Card
                             key={obj.id}
                             taskObj={obj}
-                            index={index}
+                            //index={index}
+                            name={obj.name}
                             deleteTask={deleteTask}
                             updateListArray={updateListArray}
                         />

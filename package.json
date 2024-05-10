@@ -24,7 +24,10 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.22.3",
-        "reactstrap": "^9.2.2"
+        "reactstrap": "^9.2.2",
+        "socket.io-client": "^4.7.5",
+        "websocket": "^1.0.34",
+        "websocket-extensions": "^0.1.4"
     },
     "devDependencies": {
         "@testing-library/dom": "^9.3.4",
@@ -33,6 +36,7 @@
         "@types/jest": "^29.5.12",
         "@types/react": "^18.2.69",
         "@types/react-dom": "^18.2.22",
+        "@types/websocket": "^1.0.10",
         "@typescript-eslint/eslint-plugin": "^7.0.2",
         "@typescript-eslint/parser": "^7.0.2",
         "@vitejs/plugin-react": "^4.2.1",

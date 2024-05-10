@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
 import Chart from './components/Chart';
 import {useState, useEffect} from 'react';
+import Subtask from './components/Subtask';
 function App() {
     const [taskList, setTaskList] = useState<Task[]>([]);
 
@@ -46,6 +47,7 @@ function App() {
                         path='/chart'
                         element={<Chart taskList={taskList} />}
                     />
+                    <Route path='/subtask' element={<Subtask></Subtask>} />
                 </Routes>
             </Router>
         </div>

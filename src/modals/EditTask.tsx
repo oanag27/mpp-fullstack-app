@@ -1,3 +1,4 @@
+//import isOnline from 'is-online';
 import React, {useState, useEffect, ChangeEvent} from 'react';
 import {Button, Modal, ModalHeader, ModalBody, ModalFooter} from 'reactstrap';
 
@@ -48,10 +49,9 @@ const EditTask: React.FC<Props> = ({modal, toggle, taskObj}) => {
             description: description,
             duration: duration,
         };
-        //updateTask(tempObj);
         try {
             const response = await fetch(
-                `https://localhost:7149/api/Task/UpdateTask/${taskObj.id}`,
+                `https://localhost:7149/api/Task/UpdateTaskByName/${taskObj.name}`,
                 {
                     method: 'PUT',
                     headers: {
