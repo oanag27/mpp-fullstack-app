@@ -147,6 +147,11 @@ const Task = () => {
             console.error(`Task with name ${name} not found.`);
         }
     };
+    const addSubtask = (taskName: string) => {
+        // Implement logic to add subtasks here
+        // For example, you can open a modal to input subtask details
+        console.log(`Adding subtask for task: ${taskName}`);
+    };
 
     const saveTask = async (taskObj: PartialTask) => {
         if (!taskObj.name || !taskObj.description || taskObj.duration <= 0) {
@@ -290,6 +295,7 @@ const Task = () => {
                             name={obj.name}
                             deleteTask={deleteTask}
                             updateListArray={updateListArray}
+                            addSubtask={() => addSubtask(obj.name)}
                         />
                     ))}
                 </div>

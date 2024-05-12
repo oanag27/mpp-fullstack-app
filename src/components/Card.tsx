@@ -1,10 +1,18 @@
 import React, {useState} from 'react';
 import EditTask from '../modals/EditTask';
+import {Link} from 'react-router-dom';
+import AddSubtask from '../modals/AddSubtask';
 interface Task {
     id: number;
     name: string;
     description: string;
     duration: number;
+}
+interface PartialSubtask {
+    name: string;
+    description: string;
+    completed: boolean;
+    taskId: number;
 }
 
 interface Props {
@@ -13,6 +21,7 @@ interface Props {
     name: string;
     deleteTask: (name: string) => void;
     updateListArray: (obj: Task, name: string) => void;
+    addSubtask: (subtask: PartialSubtask) => void;
 }
 
 const Card: React.FC<Props> = ({
@@ -20,8 +29,14 @@ const Card: React.FC<Props> = ({
     name,
     deleteTask,
     updateListArray,
+    addSubtask,
 }) => {
     const [modal, setModal] = useState(false);
+    const [addSubtaskModal, setAddSubtaskModal] = useState(false);
+
+    const toggleAddSubtaskModal = () => {
+        setAddSubtaskModal(!addSubtaskModal);
+    };
     const updateTask = (obj: Task) => {
         updateListArray(obj, name);
     };
@@ -32,6 +47,7 @@ const Card: React.FC<Props> = ({
     const handleDelete = () => {
         deleteTask(taskObj.name);
     };
+
     return (
         <div className='card-wrapper mr-5'>
             <div
@@ -59,6 +75,27 @@ const Card: React.FC<Props> = ({
                     }}
                 >
                     <i
+                        className='fa fa-plus'
+                        style={{
+                            color: '#3c3c3c',
+                            cursor: 'pointer',
+                            paddingRight: '18px',
+                        }}
+                        onClick={() => setAddSubtaskModal(true)}
+                    ></i>
+                    <Link
+                        to={`/task-details/${encodeURIComponent(taskObj.name)}`}
+                    >
+                        <i
+                            className='fas fa-info-circle ml-2'
+                            style={{
+                                color: '#3c3c3c',
+                                cursor: 'pointer',
+                                paddingRight: '18px',
+                            }}
+                        ></i>
+                    </Link>
+                    <i
                         className='far fa-edit edit-icon'
                         data-testid='edit-icon'
                         style={{
@@ -83,6 +120,12 @@ const Card: React.FC<Props> = ({
                 toggle={toggle}
                 updateTask={updateTask}
                 taskObj={taskObj}
+            />
+            <AddSubtask
+                modal={addSubtaskModal}
+                toggle={toggleAddSubtaskModal}
+                addSubtask={addSubtask}
+                taskId={taskObj.id} // Pass the task ID to the AddSubtask modal
             />
         </div>
     );

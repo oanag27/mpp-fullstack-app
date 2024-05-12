@@ -6,6 +6,7 @@ import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
 import Chart from './components/Chart';
 import {useState, useEffect} from 'react';
 import Subtask from './components/Subtask';
+import TaskDetails from './components/TaskDetails';
 function App() {
     const [taskList, setTaskList] = useState<Task[]>([]);
 
@@ -48,6 +49,10 @@ function App() {
                         element={<Chart taskList={taskList} />}
                     />
                     <Route path='/subtask' element={<Subtask></Subtask>} />
+                    <Route
+                        path='/task-details/:taskName'
+                        element={<TaskDetails />}
+                    />
                 </Routes>
             </Router>
         </div>
