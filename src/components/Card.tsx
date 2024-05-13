@@ -17,7 +17,6 @@ interface PartialSubtask {
 
 interface Props {
     taskObj: Task;
-    //index: number;
     name: string;
     deleteTask: (name: string) => void;
     updateListArray: (obj: Task, name: string) => void;
@@ -125,7 +124,7 @@ const Card: React.FC<Props> = ({
                 modal={addSubtaskModal}
                 toggle={toggleAddSubtaskModal}
                 addSubtask={addSubtask}
-                taskId={taskObj.id} // Pass the task ID to the AddSubtask modal
+                taskId={taskObj.id}
             />
         </div>
     );

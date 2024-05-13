@@ -2,7 +2,9 @@ import {useState, useEffect} from 'react';
 import AddTask from '../modals/AddTask';
 import Card from './Card';
 import isOnline from 'is-online';
-import {Link} from 'react-router-dom';
+//import {Link} from 'react-router-dom';
+import React from 'react';
+import InfiniteScroll from 'react-infinite-scroll-component';
 interface Task {
     id: number;
     name: string;
@@ -20,54 +22,69 @@ interface PartialTask {
 const Task = () => {
     const [modal, setModal] = useState(false);
     const [taskList, setTaskList] = useState<Task[]>([]);
-    //const [modifiedTasks, setModifiedTasks] = useState<Task[]>([]);
+
     const [loading, setLoading] = useState(true);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(3); // Number of items to display per page
+    const tasksPerPage = 50;
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isOnlineStatus, setIsOnlineStatus] = useState(true); // Internet connection status
-
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const online = await isOnline();
-                setIsOnlineStatus(online); // Update online status
-                console.log('status:', online);
-                if (!online) {
-                    const storedTasks = localStorage.getItem('taskList');
-                    console.log('Stored tasks:', storedTasks);
-                    if (storedTasks) {
-                        setTaskList(JSON.parse(storedTasks));
-                    }
-                    // If offline, don't make the fetch request
-                    setLoading(false);
-                    console.log('stored:', storedTasks);
-                    return;
-                }
-                console.log('stored:');
-                const response = await fetch(
-                    'https://localhost:7149/api/Task/GetAllTasks',
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-                const data = await response.json();
-                console.log('Fetched data:', data);
-                setTaskList(data);
-                setLoading(false);
-                // Sync tasks with the server
-                await syncWithServer();
-            } catch (error) {
-                console.error('Error:', error);
-                setErrorMessage('Server is unreachable'); // Set error message for server down
-                setLoading(false);
-            }
-        };
-
         fetchData();
     }, []);
+    //useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const online = await isOnline();
+            setIsOnlineStatus(online); // Update online status
+            console.log('status:', online);
+            //console.log('tasklist', taskList);
+            if (!online) {
+                const storedTasks = localStorage.getItem('taskList');
+                console.log('Stored tasks:', storedTasks);
+                if (storedTasks) {
+                    setTaskList(JSON.parse(storedTasks));
+                }
+                // If offline, don't make the fetch request
+                setLoading(false);
+                console.log('stored:', storedTasks);
+                return;
+            }
+            console.log('stored:');
+            const response = await fetch(
+                'https://localhost:7149/api/Task/GetAllTasks',
+            );
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+
+            const data = await response.json();
+            console.log('data', data);
+            setCurrentPage(
+                (prevPage) => prevPage + Math.ceil(data.length / tasksPerPage),
+            );
+            console.log('Fetched data:', data);
+            //setTaskList(data);
+            setTaskList((prevTasks) => [...prevTasks, ...data]);
+            setLoading(false);
+
+            // Sync tasks with the server
+            await syncWithServer();
+        } catch (error) {
+            console.error('Error:', error);
+            setErrorMessage('Server is unreachable'); // Set error message for server down
+            setLoading(false);
+        }
+    };
+    // const endIndex = currentPage * tasksPerPage;
+    // const displayedTasks = taskList.slice(0, endIndex);
+    const startIndex = (currentPage - 1) * tasksPerPage;
+    const endIndex = Math.min(startIndex + tasksPerPage, taskList.length);
+    const displayedTasks = taskList.slice(0, endIndex);
+
+    console.log('display tasks', displayedTasks);
+    console.log('taskList', taskList);
 
     useEffect(() => {
         const handleOnlineStatusChange = () => {
@@ -96,7 +113,7 @@ const Task = () => {
                         await saveTask(task);
                     }
                 }
-                //localStorage.removeItem('taskList');
+
                 // Remove offlineAdded flag from tasks that were synced
                 const tasksToSaveOffline = modifiedTasks.filter(
                     (task: PartialTask) => !task.offlineAdded,
@@ -105,6 +122,7 @@ const Task = () => {
                     'taskList',
                     JSON.stringify(tasksToSaveOffline),
                 );
+                //setTaskList(tasksToSaveOffline);
             } else {
                 return;
             }
@@ -115,10 +133,18 @@ const Task = () => {
     const toggle = () => {
         setModal(!modal);
     };
+
     const deleteTask = async (taskName: string) => {
         try {
+            const resp = await fetch(
+                `https://localhost:7149/api/Task/GetTaskIdByName/${taskName}`,
+            );
+            if (!resp.ok) {
+                throw new Error('Failed to fetch taskId');
+            }
+            const id = await resp.json();
             const response = await fetch(
-                `https://localhost:7149/api/Task/DeleteName/${taskName}`,
+                `https://localhost:7149/api/Task/Delete/${id}`,
                 {
                     method: 'DELETE',
                 },
@@ -148,8 +174,6 @@ const Task = () => {
         }
     };
     const addSubtask = (taskName: string) => {
-        // Implement logic to add subtasks here
-        // For example, you can open a modal to input subtask details
         console.log(`Adding subtask for task: ${taskName}`);
     };
 
@@ -169,11 +193,14 @@ const Task = () => {
                 offlineAdded: true,
             };
 
-            // Update the task list state
-            const updatedTaskList = [...taskList, taskWithoutId];
-            setTaskList(updatedTaskList);
+            setTaskList((prevTasks) => [...prevTasks, taskWithoutId]);
+
             // Update local storage
-            localStorage.setItem('taskList', JSON.stringify(updatedTaskList));
+            localStorage.setItem(
+                'taskList',
+                JSON.stringify([...taskList, taskWithoutId]),
+            );
+
             // Close the modal
             setModal(false);
             // Exit the function
@@ -198,7 +225,13 @@ const Task = () => {
             // If the task is added successfully, update the task list state
             const data = await response.json();
             console.log('Added task:', data);
-
+            const isDuplicate = taskList.some(
+                (task) => task.name === data.name,
+            );
+            if (isDuplicate) {
+                setErrorMessage('Task with the same name already exists.');
+                return;
+            }
             // Create a copy of the current task list
             const tempList = [...taskList];
 
@@ -232,29 +265,10 @@ const Task = () => {
         }
     };
 
-    const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-    const indexOfLastItem = Math.min(
-        currentPage * itemsPerPage,
-        taskList.length,
-    );
-
-    const currentTasks = taskList.slice(indexOfFirstItem, indexOfLastItem);
-
-    // Change page
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
     return (
         <>
             <div className='header text-center'>
                 <h3 style={{color: '#fff'}}>Task Manager</h3>
-                <Link to='/subtask'>
-                    <button
-                        className='btn btn-secondary mt-3 ml-3'
-                        style={{marginRight: '15px'}}
-                    >
-                        Subtasks
-                    </button>
-                </Link>
                 <button
                     className='btn btn-primary mt-3'
                     style={{
@@ -286,53 +300,26 @@ const Task = () => {
             {loading ? ( // Render loading indicator while tasks are being fetched
                 <div>Loading...</div>
             ) : (
-                <div className='task-container'>
-                    {currentTasks.map((obj) => (
-                        <Card
-                            key={obj.id}
-                            taskObj={obj}
-                            //index={index}
-                            name={obj.name}
-                            deleteTask={deleteTask}
-                            updateListArray={updateListArray}
-                            addSubtask={() => addSubtask(obj.name)}
-                        />
-                    ))}
-                </div>
+                <InfiniteScroll
+                    dataLength={displayedTasks.length}
+                    next={fetchData}
+                    hasMore={displayedTasks.length < 1000}
+                    loader={<h4></h4>} // Loader component to display while loading
+                >
+                    <div className='task-container'>
+                        {displayedTasks.map((obj) => (
+                            <Card
+                                key={obj.id}
+                                taskObj={obj}
+                                name={obj.name}
+                                deleteTask={deleteTask}
+                                updateListArray={updateListArray}
+                                addSubtask={() => addSubtask(obj.name)}
+                            />
+                        ))}
+                    </div>
+                </InfiniteScroll>
             )}
-            <div
-                className='pagination'
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    marginTop: '5px',
-                }}
-            >
-                <button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                >
-                    Previous
-                </button>
-                <p
-                    style={{
-                        textAlign: 'center',
-                        marginLeft: '5px',
-                        marginRight: '5px',
-                        marginTop: '5px',
-                    }}
-                >
-                    Showing {indexOfFirstItem + 1} to{' '}
-                    {Math.min(indexOfLastItem, taskList.length)} of{' '}
-                    {taskList.length} tasks
-                </p>
-                <button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={indexOfLastItem >= taskList.length}
-                >
-                    Next
-                </button>
-            </div>
             <AddTask toogle={toggle} modal={modal} save={saveTask} />
         </>
     );
