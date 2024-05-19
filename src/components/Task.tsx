@@ -2,7 +2,6 @@ import {useState, useEffect} from 'react';
 import AddTask from '../modals/AddTask';
 import Card from './Card';
 import isOnline from 'is-online';
-//import {Link} from 'react-router-dom';
 import React from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 interface Task {
@@ -25,66 +24,60 @@ const Task = () => {
 
     const [loading, setLoading] = useState(true);
 
-    const [currentPage, setCurrentPage] = useState(1);
     const tasksPerPage = 50;
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isOnlineStatus, setIsOnlineStatus] = useState(true); // Internet connection status
+    let finish = true;
     useEffect(() => {
         fetchData();
     }, []);
-    //useEffect(() => {
+    let page = 1;
+
     const fetchData = async () => {
         try {
             const online = await isOnline();
             setIsOnlineStatus(online); // Update online status
-            console.log('status:', online);
-            //console.log('tasklist', taskList);
+
             if (!online) {
                 const storedTasks = localStorage.getItem('taskList');
-                console.log('Stored tasks:', storedTasks);
                 if (storedTasks) {
                     setTaskList(JSON.parse(storedTasks));
                 }
-                // If offline, don't make the fetch request
                 setLoading(false);
-                console.log('stored:', storedTasks);
                 return;
             }
-            console.log('stored:');
-            const response = await fetch(
-                'https://localhost:7149/api/Task/GetAllTasks',
-            );
-            if (!response.ok) {
-                throw new Error('Failed to fetch data');
+
+            while (finish) {
+                // Continue fetching while there are more tasks to fetch
+                const response = await fetch(
+                    `https://localhost:7149/api/Task/GetPaginatedTasks/${page}/${tasksPerPage}`,
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+
+                const data = await response.json();
+
+                setTaskList((prevTasks) => [...prevTasks, ...data]);
+                setLoading(false);
+                // Check if there are no tasks returned
+                if (data.length === 0 || data.length < tasksPerPage) {
+                    finish = false;
+                    setLoading(false);
+                    break;
+                }
+                // Sync tasks with the server
+                await syncWithServer();
+                page += 1;
             }
-
-            const data = await response.json();
-            console.log('data', data);
-            setCurrentPage(
-                (prevPage) => prevPage + Math.ceil(data.length / tasksPerPage),
-            );
-            console.log('Fetched data:', data);
-            //setTaskList(data);
-            setTaskList((prevTasks) => [...prevTasks, ...data]);
-            setLoading(false);
-
-            // Sync tasks with the server
-            await syncWithServer();
         } catch (error) {
             console.error('Error:', error);
-            setErrorMessage('Server is unreachable'); // Set error message for server down
+            setErrorMessage('Failed to fetch tasks'); // Set error message for failed fetch
             setLoading(false);
         }
     };
-    // const endIndex = currentPage * tasksPerPage;
-    // const displayedTasks = taskList.slice(0, endIndex);
-    const startIndex = (currentPage - 1) * tasksPerPage;
-    const endIndex = Math.min(startIndex + tasksPerPage, taskList.length);
-    const displayedTasks = taskList.slice(0, endIndex);
-
-    console.log('display tasks', displayedTasks);
-    console.log('taskList', taskList);
 
     useEffect(() => {
         const handleOnlineStatusChange = () => {
@@ -301,13 +294,13 @@ const Task = () => {
                 <div>Loading...</div>
             ) : (
                 <InfiniteScroll
-                    dataLength={displayedTasks.length}
+                    dataLength={taskList.length}
                     next={fetchData}
-                    hasMore={displayedTasks.length < 1000}
+                    hasMore={finish}
                     loader={<h4></h4>} // Loader component to display while loading
                 >
                     <div className='task-container'>
-                        {displayedTasks.map((obj) => (
+                        {taskList.map((obj) => (
                             <Card
                                 key={obj.id}
                                 taskObj={obj}
