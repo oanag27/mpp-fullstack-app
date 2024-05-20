@@ -20,21 +20,57 @@ interface PartialTask {
 
 const Task = () => {
     const [modal, setModal] = useState(false);
-    const [taskList, setTaskList] = useState<Task[]>([]);
+    const [taskList, setTaskList] = useState<Task[]>([
+        {
+            name: 'b',
+            description: 'b',
+            duration: 3,
+            id: 1,
+        },
+        {
+            name: 'a',
+            description: 'a',
+            duration: 1,
+            id: 2,
+        },
+        {
+            name: 'r',
+            description: 'r',
+            duration: 1,
+            id: 3,
+        },
+        {
+            name: 'Sarah Huel',
+            description: 'Mollitia similique optio omnis quaerat.',
+            duration: 10,
+            id: 4,
+        },
+        {
+            name: 'Ubaldo Towne',
+            description: 'Sint optio consectetur dolor itaque.',
+            duration: 99,
+            id: 5,
+        },
+    ]);
 
-    const [loading, setLoading] = useState(true);
-
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
     const tasksPerPage = 50;
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isOnlineStatus, setIsOnlineStatus] = useState(true); // Internet connection status
-    let finish = true;
+
     useEffect(() => {
-        fetchData();
-    }, []);
-    let page = 1;
+        console.log('taskList', taskList);
+    }, [taskList]);
+    const [hasMore, setHasMore] = useState(true);
+    useEffect(() => {
+        console.log('taskList: ', taskList);
+    }, [taskList]);
 
     const fetchData = async () => {
+        console.log('page in', page);
+        console.log('in fetch');
         try {
             const online = await isOnline();
             setIsOnlineStatus(online); // Update online status
@@ -47,31 +83,25 @@ const Task = () => {
                 setLoading(false);
                 return;
             }
-
-            while (finish) {
-                // Continue fetching while there are more tasks to fetch
-                const response = await fetch(
-                    `https://localhost:7149/api/Task/GetPaginatedTasks/${page}/${tasksPerPage}`,
-                );
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-
-                const data = await response.json();
-
-                setTaskList((prevTasks) => [...prevTasks, ...data]);
-                setLoading(false);
-                // Check if there are no tasks returned
-                if (data.length === 0 || data.length < tasksPerPage) {
-                    finish = false;
-                    setLoading(false);
-                    break;
-                }
-                // Sync tasks with the server
-                await syncWithServer();
-                page += 1;
+            console.log('page in', page);
+            setPage(page + 1);
+            if (taskList.length > 163) {
+                setHasMore(false);
+                return;
             }
+            const response = await fetch(
+                `https://localhost:7149/api/Task/GetPaginatedTasks/${page}/${tasksPerPage}`,
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+
+            const data = await response.json();
+            setTaskList((prevTasks) => [...prevTasks, ...data]);
+            setLoading(false);
+            // Sync tasks with the server
+            await syncWithServer();
         } catch (error) {
             console.error('Error:', error);
             setErrorMessage('Failed to fetch tasks'); // Set error message for failed fetch
@@ -296,8 +326,13 @@ const Task = () => {
                 <InfiniteScroll
                     dataLength={taskList.length}
                     next={fetchData}
-                    hasMore={finish}
-                    loader={<h4></h4>} // Loader component to display while loading
+                    hasMore={hasMore}
+                    loader={<h4>Loading data...</h4>} // Loader component to display while loading
+                    endMessage={
+                        <p style={{textAlign: 'center'}}>
+                            <b>Yay! You have seen it all</b>
+                        </p>
+                    }
                 >
                     <div className='task-container'>
                         {taskList.map((obj) => (
