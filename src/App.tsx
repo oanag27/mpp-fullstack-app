@@ -7,6 +7,8 @@ import Chart from './components/Chart';
 import {useState, useEffect} from 'react';
 import Subtask from './components/Subtask';
 import TaskDetails from './components/TaskDetails';
+import Login from './components/Login';
+import Register from './components/Register';
 function App() {
     const [taskList, setTaskList] = useState<Task[]>([]);
 
@@ -43,7 +45,9 @@ function App() {
         <div className='App'>
             <Router>
                 <Routes>
-                    <Route path='/' element={<Task />} />
+                    <Route path='/' element={<Login />} />
+                    <Route path='/register' element={<Register />} />
+                    <Route path='/task' element={<Task />} />
                     <Route
                         path='/chart'
                         element={<Chart taskList={taskList} />}
