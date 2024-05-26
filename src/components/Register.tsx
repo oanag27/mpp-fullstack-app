@@ -5,9 +5,40 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const [role, setRole] = useState('');
+
+    const validatePassword = (password: string) => {
+        const minLength = 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumber = /\d/.test(password);
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+        if (password.length < minLength) {
+            return 'Password must be at least 8 characters long.';
+        }
+        if (!hasUpperCase) {
+            return 'Password must contain at least one uppercase letter.';
+        }
+        if (!hasLowerCase) {
+            return 'Password must contain at least one lowercase letter.';
+        }
+        if (!hasNumber) {
+            return 'Password must contain at least one number.';
+        }
+        if (!hasSpecialChar) {
+            return 'Password must contain at least one special character.';
+        }
+        return '';
+    };
 
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            setMessage(passwordError);
+            return;
+        }
 
         try {
             const response = await axios.post(
@@ -15,6 +46,7 @@ const Register = () => {
                 {
                     email,
                     password,
+                    role,
                 },
             );
 
@@ -85,6 +117,31 @@ const Register = () => {
                             boxSizing: 'border-box',
                         }}
                     />
+                </div>
+                <div>
+                    <label
+                        style={{
+                            display: 'block',
+                            marginBottom: '5px',
+                            color: '#3c3c3c',
+                        }}
+                    >
+                        Role:
+                    </label>
+                    <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        required
+                        style={{
+                            width: '100%',
+                            padding: '8px',
+                            boxSizing: 'border-box',
+                        }}
+                    >
+                        <option value='User'>User</option>
+                        <option value='Manager'>Manager</option>
+                        <option value='Admin'>Admin</option>
+                    </select>
                 </div>
                 <button
                     type='submit'
