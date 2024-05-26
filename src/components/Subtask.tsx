@@ -29,7 +29,7 @@ const Subtask = () => {
                 Add Subtask
             </button>
             <Link
-                to='/'
+                to='/task'
                 style={{
                     textDecoration: 'none',
                     color: 'black',

@@ -21,6 +21,7 @@ const Login = () => {
 
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('role', response.data.role);
                 setMessage('Login successful!');
                 window.location.href = '/task';
             } else {

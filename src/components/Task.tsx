@@ -4,6 +4,8 @@ import Card from './Card';
 import isOnline from 'is-online';
 import React from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import {Link} from 'react-router-dom';
+
 interface Task {
     id: number;
     name: string;
@@ -60,6 +62,8 @@ const Task = () => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isOnlineStatus, setIsOnlineStatus] = useState(true); // Internet connection status
 
+    const storedRole = localStorage.getItem('role');
+    //console.log(localStorage.getItem('role'));
     useEffect(() => {
         console.log('taskList', taskList);
     }, [taskList]);
@@ -156,8 +160,15 @@ const Task = () => {
     const toggle = () => {
         setModal(!modal);
     };
+    const checkRole = () => {
+        return storedRole === 'Manager' || storedRole === 'Admin';
+    };
 
     const deleteTask = async (taskName: string) => {
+        if (!checkRole()) {
+            setErrorMessage('You do not have permission to delete tasks.');
+            return;
+        }
         try {
             const resp = await fetch(
                 `https://localhost:7149/api/Task/GetTaskIdByName/${taskName}`,
@@ -185,6 +196,10 @@ const Task = () => {
         }
     };
     const updateListArray = (obj: Task, name: string) => {
+        if (!checkRole()) {
+            setErrorMessage('You do not have permission to update tasks.');
+            return;
+        }
         const index = taskList.findIndex((task) => task.name === name); // Find the index of the task with the given name
         if (index !== -1) {
             // Check if the task with the given name exists
@@ -201,6 +216,10 @@ const Task = () => {
     };
 
     const saveTask = async (taskObj: PartialTask) => {
+        if (!checkRole()) {
+            setErrorMessage('You do not have permission to add tasks.');
+            return;
+        }
         if (!taskObj.name || !taskObj.description || taskObj.duration <= 0) {
             setErrorMessage('Please provide valid task details.');
             return;
@@ -292,6 +311,7 @@ const Task = () => {
         <>
             <div className='header text-center'>
                 <h3 style={{color: '#fff'}}>Task Manager</h3>
+                <p style={{color: '#fff'}}>Role: {storedRole}</p>
                 <button
                     className='btn btn-primary mt-3'
                     style={{
@@ -309,6 +329,18 @@ const Task = () => {
                 >
                     Sort by Name
                 </button>
+                <Link to='/extra-actions-page'>
+                    <button
+                        className='btn btn-primary mt-3'
+                        style={{
+                            backgroundColor: '#fff',
+                            color: '#3c3c3c',
+                            marginLeft: '15px',
+                        }}
+                    >
+                        Extra Actions
+                    </button>
+                </Link>
                 {!isOnlineStatus ? (
                     <p style={{color: 'red'}}>Offline</p>
                 ) : (

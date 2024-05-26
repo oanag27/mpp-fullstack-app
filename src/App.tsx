@@ -9,6 +9,7 @@ import Subtask from './components/Subtask';
 import TaskDetails from './components/TaskDetails';
 import Login from './components/Login';
 import Register from './components/Register';
+import ExtraActions from './components/ExtraActions';
 function App() {
     const [taskList, setTaskList] = useState<Task[]>([]);
 
@@ -56,6 +57,10 @@ function App() {
                     <Route
                         path='/task-details/:taskName'
                         element={<TaskDetails />}
+                    />
+                    <Route
+                        path='/extra-actions-page'
+                        element={<ExtraActions></ExtraActions>}
                     />
                 </Routes>
             </Router>
